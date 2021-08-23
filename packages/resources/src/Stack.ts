@@ -1,4 +1,5 @@
 import * as cdk from "@aws-cdk/core";
+import { FunctionProps } from "./Function";
 import { App } from "./App";
 import { isConstruct } from "./util/construct";
 
@@ -6,6 +7,10 @@ export type StackProps = cdk.StackProps;
 
 export class Stack extends cdk.Stack {
   public readonly stage: string;
+  public readonly defaultFunctionProps: (
+    | FunctionProps
+    | ((stack: cdk.Stack) => FunctionProps)
+  )[];
 
   constructor(scope: cdk.Construct, id: string, props?: StackProps) {
     const root = scope.node.root as App;
@@ -22,7 +27,14 @@ export class Stack extends cdk.Stack {
       },
     });
 
+    this.defaultFunctionProps = [];
     this.stage = root.stage;
+  }
+
+  public mergeDefaultFunctionProps(
+    item: FunctionProps | ((stack: cdk.Stack) => FunctionProps)
+  ) {
+    this.defaultFunctionProps.push(item);
   }
 
   public addOutputs(outputs: {

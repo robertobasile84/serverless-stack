@@ -1205,6 +1205,146 @@ test("normalizeSrcPath", async () => {
 });
 
 /////////////////////////////
+// Test stack defaultFunctionProps
+/////////////////////////////
+
+test.only("stack-defaultFunctionProps", async () => {
+  const app = new App();
+
+  const stack = new Stack(app, "stack");
+  stack.mergeDefaultFunctionProps({
+    timeout: 15,
+  });
+  new Function(stack, "Function", {
+    handler: "test/lambda.handler",
+  });
+  expectCdk(stack).to(
+    haveResource("AWS::Lambda::Function", {
+      Handler: "lambda.handler",
+      Timeout: 15,
+      MemorySize: 1024,
+      TracingConfig: { Mode: "Active" },
+    })
+  );
+});
+
+test.only("stack-defaultFunctionProps-calledTwice", async () => {
+  const app = new App();
+
+  const stack = new Stack(app, "stack");
+  stack.mergeDefaultFunctionProps({
+    timeout: 15,
+    memorySize: 256,
+    environment: { keyA: "valueA" },
+  });
+  stack.mergeDefaultFunctionProps({
+    timeout: 10,
+    environment: { keyB: "valueB" },
+  });
+  new Function(stack, "Function", {
+    handler: "test/lambda.handler",
+  });
+  expectCdk(stack).to(
+    haveResource("AWS::Lambda::Function", {
+      Handler: "lambda.handler",
+      Timeout: 10,
+      MemorySize: 256,
+      Environment: {
+        Variables: {
+          keyA: "valueA",
+          keyB: "valueB",
+          AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1",
+        },
+      },
+      TracingConfig: { Mode: "Active" },
+    })
+  );
+});
+
+test.only("stack-defaultFunctionProps-callback", async () => {
+  const app = new App();
+
+  const stack = new Stack(app, "stack");
+  stack.mergeDefaultFunctionProps(() => ({
+    timeout: 15,
+  }));
+  new Function(stack, "Function", {
+    handler: "test/lambda.handler",
+  });
+  expectCdk(stack).to(
+    haveResource("AWS::Lambda::Function", {
+      Handler: "lambda.handler",
+      Timeout: 15,
+      MemorySize: 1024,
+      TracingConfig: { Mode: "Active" },
+    })
+  );
+});
+
+test.only("stack-defaultFunctionProps-callback-calledTwice", async () => {
+  const app = new App();
+
+  const stack = new Stack(app, "stack");
+  stack.mergeDefaultFunctionProps(() => ({
+    timeout: 15,
+    memorySize: 256,
+    environment: { keyA: "valueA" },
+  }));
+  stack.mergeDefaultFunctionProps(() => ({
+    timeout: 10,
+    environment: { keyB: "valueB" },
+  }));
+  new Function(stack, "Function", {
+    handler: "test/lambda.handler",
+  });
+  expectCdk(stack).to(
+    haveResource("AWS::Lambda::Function", {
+      Handler: "lambda.handler",
+      Timeout: 10,
+      MemorySize: 256,
+      Environment: {
+        Variables: {
+          keyA: "valueA",
+          keyB: "valueB",
+          AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1",
+        },
+      },
+      TracingConfig: { Mode: "Active" },
+    })
+  );
+});
+
+test.only("stack-defaultFunctionProps-override", async () => {
+  const app = new App();
+
+  const stack = new Stack(app, "stack");
+  stack.mergeDefaultFunctionProps({
+    timeout: 15,
+    environment: { keyA: "valueA" },
+  });
+  new Function(stack, "Function", {
+    handler: "test/lambda.handler",
+    timeout: 10,
+    environment: { keyB: "valueB" },
+  });
+  expectCdk(stack).to(
+    haveResource("AWS::Lambda::Function", {
+      Handler: "lambda.handler",
+      Timeout: 10,
+      MemorySize: 1024,
+      TracingConfig: { Mode: "Active" },
+      Environment: {
+        Variables: {
+          keyA: "valueA",
+          keyB: "valueB",
+          AWS_NODEJS_CONNECTION_REUSE_ENABLED: "1",
+        },
+      },
+    })
+  );
+});
+
+/////////////////////////////
 // Test app defaultFunctionProps
 /////////////////////////////
 

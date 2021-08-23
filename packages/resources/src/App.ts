@@ -195,6 +195,12 @@ export class App extends cdk.App {
   setDefaultFunctionProps(
     props: FunctionProps | ((stack: cdk.Stack) => FunctionProps)
   ): void {
+    this.mergeDefaultFunctionProps(props);
+  }
+
+  mergeDefaultFunctionProps(
+    props: FunctionProps | ((stack: cdk.Stack) => FunctionProps)
+  ): void {
     this.defaultFunctionProps.push(props);
   }
 

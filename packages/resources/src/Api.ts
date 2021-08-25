@@ -63,6 +63,7 @@ export interface ApiProps {
     | apigAuthorizers.HttpUserPoolAuthorizer;
   readonly defaultAuthorizationScopes?: string[];
   readonly defaultPayloadFormatVersion?: ApiPayloadFormatVersion;
+  readonly stages?: Omit<apig.HttpStageProps, "httpApi">[];
 }
 
 export interface ApiFunctionRouteProps {
@@ -128,6 +129,7 @@ export class Api extends cdk.Construct {
     super(scope, id);
 
     const root = scope.node.root as App;
+    props = props || {};
     const {
       httpApi,
       routes,
@@ -139,7 +141,7 @@ export class Api extends cdk.Construct {
       defaultAuthorizationType,
       defaultAuthorizationScopes,
       defaultPayloadFormatVersion,
-    } = props || {};
+    } = props;
     this.routesData = {};
     this.permissionsAttachedForAllRoutes = [];
     this.defaultFunctionProps = defaultFunctionProps;
@@ -166,6 +168,11 @@ export class Api extends cdk.Construct {
       if (customDomain !== undefined) {
         throw new Error(
           `Cannot configure the "customDomain" when "httpApi" is a construct`
+        );
+      }
+      if (props.stages !== undefined) {
+        throw new Error(
+          `Cannot configure the "stages" when "httpApi" is a construct`
         );
       }
       this.httpApi = httpApi as apig.HttpApi;
@@ -214,11 +221,20 @@ export class Api extends cdk.Construct {
         ...httpApiProps,
       });
 
-      this.accessLogGroup = apigV2AccessLog.buildAccessLogData(
-        this,
-        accessLog,
-        this.httpApi.defaultStage as apig.HttpStage
-      );
+      for (let def of props.stages || []) {
+        const stage = new apig.HttpStage(this, "Stage" + def.stageName, {
+          ...def,
+          httpApi: this.httpApi,
+        });
+        apigV2AccessLog.buildAccessLogData(this, accessLog, stage);
+      }
+
+      if (this.httpApi.defaultStage)
+        this.accessLogGroup = apigV2AccessLog.buildAccessLogData(
+          this,
+          accessLog,
+          this.httpApi.defaultStage as apig.HttpStage
+        );
     }
 
     ///////////////////////////
